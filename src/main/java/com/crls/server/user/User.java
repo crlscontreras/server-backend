@@ -4,7 +4,7 @@ package com.crls.server.user;
  */
 
 
-//import com.crls.security.token.Token;
+import com.crls.server.token.Token;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
