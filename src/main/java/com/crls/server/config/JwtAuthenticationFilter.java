@@ -1,6 +1,6 @@
 package com.crls.server.config;
 
-//import com.crls.security.token.TokenRepository;
+import com.crls.server.token.TokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +38,7 @@ we need to tell spring that we want this class to be managed bean, to do so que 
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
-    private final UserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService; //UserDetailsService is an interface available within spring
     private final TokenRepository tokenRepository;
 
     /*
@@ -48,14 +48,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     doFilter(request, response): Causes the next filter in the chain to be invoked. you are handing the http request/response to the next filter in your filter chain.
      */
     @Override
-    protected void doFilterInternal(      @NonNull HttpServletRequest request,
-                                          @NonNull HttpServletResponse response,
-                                          @NonNull FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    )throws ServletException, IOException {
+        //the request should be in this path
         if (request.getServletPath().contains("/api/v1/auth")) {
             filterChain.doFilter(request, response);
             return;
         }
+
         //when we make a call to the API we pass the token in the header called "Authorization"
         final String authHeader = request.getHeader("Authorization");//the header is part of the request
         final String jwt;
@@ -65,12 +68,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+
         //extract the token from header
         jwt = authHeader.substring(7);//7 because of: "Bearer "
-        //2:
-
         userEmail = jwtService.extractUsername(jwt);
 
+        //if we have a user and the user is not authenticated (.getAuthentication() null)
+        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            //get the user from database
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
+            var isTokenValid = tokenRepository.findByToken(jwt)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+            //check if user and token is valid
+            if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
+                //if token valid then we need to update the SecurityContextHolder
+                //and send the request to the dispatcher servlet
+
+                //when we create user we dont have credentials yet
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+                //give details to auth
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+                //update SecurityContextHolder
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+        }
+        filterChain.doFilter(request, response);
     }
 }
