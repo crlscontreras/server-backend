@@ -29,12 +29,20 @@ public class Token {
     @Column(unique = true)
     public String token;
 
+    //we are just using BEARER tokens for now, so BEARER is the default
     @Enumerated(EnumType.STRING)
     public TokenType tokenType = TokenType.BEARER;
+
+    //2 flags
+    //when the user sends a log out request we update both of these
+    //we can also implement a mechanism that revokes ALL the tokens when, for example, the backend restarts
 
     public boolean revoked;
 
     public boolean expired;
+
+    //1 token belongs to 1 user
+    //1 user can have many tokens
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

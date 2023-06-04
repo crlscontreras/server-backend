@@ -12,9 +12,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 
-//we need this to provide 2 endpoints
-//so the user can create an account or authenticate
-//we delegate the implementation of these endpoints to the service: service.register and service.authenticate
+/*
+the url of the endpoint is defined with @RequestMapping
+this is a @RestController
+this controller is used to manage the Tokens (and the 2 Auths)
+
+this provides 2 endpoints:
+- register: to create an account and then login
+- authenticate: the login, used to generate token
+
+we delegate the implementation of these endpoints to the service: AuthenticationService
+*/
+
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -30,6 +39,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> register(
             @RequestBody RegisterRequest request
     ) {
+        //if email/username exists, return error
         if (repository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body(null);
         }
@@ -38,9 +48,10 @@ public class AuthenticationController {
         }
         return ResponseEntity.ok(service.register(request));
     }
+
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(
-            @RequestBody AuthenticationRequest request
+            @RequestBody AuthenticationDto request
     ) {
         return ResponseEntity.ok(service.authenticate(request));
     }

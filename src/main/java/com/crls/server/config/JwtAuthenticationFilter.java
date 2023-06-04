@@ -23,12 +23,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /*
-we need to tell spring that we want this class to be managed bean, to do so que need to annotate it with @Component or @Service/@Repository (they extend component)
+we need to tell spring that we want this class to be managed bean, to do so we need to annotate it with @Component
+or @Service/@Repository(they extend component)
 
 @RequiredArgsConstructor: it will create a constructor using any final field that we declare
 
-1:  when we send a http request to our server the first thing we do is call the JwtAuthenticationFilter
-    to check if we have a JWT Token,
+1:  when we send a http request to our server
+    the first thing we do is call the JwtAuthenticationFilter to check if we have a JWT Token,
     so inside the method "doFilterInternal" we perform the operation to check that
 
 2:  after checking if we have a JWT Token, we need to call the UserDetailsService to check if we have the user in our database or not
@@ -59,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+
         //when we make a call to the API we pass the token in the header called "Authorization"
         final String authHeader = request.getHeader("Authorization");//the header is part of the request
         final String jwt;
@@ -69,10 +71,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        //extract the token from header
+        //extract the token from header and check if it's expired
         jwt = authHeader.substring(7);//7 because of: "Bearer "
         userEmail = jwtService.extractUsername(jwt);
-
         //if we have a user and the user is not authenticated (.getAuthentication() null)
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             //get the user from database
@@ -81,7 +82,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             var isTokenValid = tokenRepository.findByToken(jwt)
                     .map(t -> !t.isExpired() && !t.isRevoked())
                     .orElse(false);
-            //check if user and token is valid
+            //check if the token is valid with JwtService AND with the DB
             if (jwtService.isTokenValid(jwt, userDetails) && isTokenValid) {
                 //if token valid then we need to update the SecurityContextHolder
                 //and send the request to the dispatcher servlet

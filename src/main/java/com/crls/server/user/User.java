@@ -46,6 +46,7 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    //1 user can have many tokens
     @OneToMany(mappedBy = "user")
     private List<Token> tokens;
 

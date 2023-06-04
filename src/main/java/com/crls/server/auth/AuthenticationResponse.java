@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthenticationResponse {
 
+    //JsonProperty: to give it a different name
     @JsonProperty("access_token")
     private String accessToken;//the token that we send back to the user
     @JsonProperty("refresh_token")

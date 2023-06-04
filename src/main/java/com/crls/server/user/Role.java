@@ -10,7 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.crls.server.user.Permission.*;
-
+/*
+role class
+ */
 
 @RequiredArgsConstructor
 public enum Role {

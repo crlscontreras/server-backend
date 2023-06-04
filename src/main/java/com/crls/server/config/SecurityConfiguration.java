@@ -23,6 +23,11 @@ import static org.springframework.http.HttpMethod.DELETE;
 import static org.springframework.http.HttpMethod.GET;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpMethod.PUT;
+/*
+@Configuration: to let springboot know this is a config file and this need to be added to the Bean Context
+@EnableWebSecurity: to let springboot know this is were we are keeping our security config
+
+ */
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +38,7 @@ public class SecurityConfiguration {
     //final== automatically injected by spring when we start the app
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
-    private final LogoutHandler logoutHandler;
+    private final LogoutHandler logoutHandler;//spring will try to find a LogoutHandler, and it's going to find it in LogoutService
 
     //at the start of the app, spring security will try to look for a Bean of type SecurityFilterChain
     //SecurityFilterChain: Bean responsible for configuring all the HTTP security of our app
@@ -45,17 +50,8 @@ public class SecurityConfiguration {
                 .csrf().disable()//disable csrf
                 .authorizeHttpRequests().requestMatchers(
                         "/api/v1/auth/**",
-                        "/v2/api-docs",
-                        "/v3/api-docs",
-                        "/v3/api-docs/**",
-                        "/swagger-resources",
-                        "/swagger-resources/**",
-                        "/configuration/ui",
-                        "/configuration/security",
-                        "/swagger-ui/**",
-                        "/webjars/**",
-                        "/swagger-ui.html"
-                ).permitAll()//permit all the paths from the list, white list: paths that do not require any auth
+                        "/configuration/security"
+                ).permitAll()//permit all the paths from the list, this is the white list: paths that do not require any authentication
 
 
                 .requestMatchers("/api/v1/management/**").hasAnyRole(ADMIN.name(), MANAGER.name())
@@ -75,15 +71,15 @@ public class SecurityConfiguration {
                  .requestMatchers(DELETE, "/api/v1/admin/**").hasAuthority(ADMIN_DELETE.name())*/
 
 
-                .anyRequest().authenticated()//all the other requests should be auth
+                .anyRequest().authenticated()//all the other requests should be authenticated
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)//do not store session, the session that we create should be stateless, every request should be auth
                 .and()
                 .authenticationProvider(authenticationProvider)//which authenticationProvider do we want
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)//we want to call jwtAuthFilter before the UsernamePasswordAuthenticationFilter, see diagram
                 .logout()
-                .logoutUrl("/api/v1/auth/logout")
-                .addLogoutHandler(logoutHandler)
+                .logoutUrl("/api/v1/auth/logout")//this is the new logout endpoint
+                .addLogoutHandler(logoutHandler)//logoutHandler: where we implement all the mechanisms to logout
                 .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
         ;
 
